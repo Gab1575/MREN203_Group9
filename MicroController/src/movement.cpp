@@ -1,4 +1,7 @@
-//movement.cpp
-
 #include "movement.h"
-// Implementation of Movement class methods would go here
+
+void movement::startup() {
+    pinMode(EA, OUTPUT);
+    pinMode(I1, OUTPUT);
+    pinMode(I2, OUTPUT);
+}
