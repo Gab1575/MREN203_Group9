@@ -9,8 +9,12 @@ class encoders {
 public:
     encoders();
     void startup();
-    void run(double* omega_L, double* omega_R);
-    void print();    
+    void run();
+    void print();
+    // Variable to store estimated angular rate of left wheel [rad/s]
+    double omega_L = 0.0;
+    double omega_R = 0.0;
+
 private:
     static void decodeEncoderTicksR();
     static void decodeEncoderTicksL();
@@ -29,10 +33,6 @@ private:
     // Counter to keep track of encoder ticks
     static volatile long encoder_ticksL;
     static volatile long encoder_ticksR;
-
-    // Variable to store estimated angular rate of left wheel [rad/s]
-    double omega_L = 0.0;
-    double omega_R = 0.0;
 
     // Sampling interval for measurements in milliseconds
     const unsigned int T = 1000; // 1 second

@@ -42,7 +42,7 @@ void encoders::startup() {
   Serial.println("Encoders initialized.");
 }
 
-void encoders::run(double* L_omega, double* R_omega) {
+void encoders::run(){
   // Get the elapsed time [ms]
   t_now = millis();
 
@@ -52,10 +52,7 @@ void encoders::run(double* L_omega, double* R_omega) {
     omega_L = 2.0 * PI * ((double)encoder_ticksL / (double)TPR) * 1000.0 / (double)(t_now - t_last);
     omega_R = 2.0 * PI * ((double)encoder_ticksR / (double)TPR) * 1000.0 / (double)(t_now - t_last);
 
-    *L_omega = omega_L;
-    *R_omega = omega_R;
-
-        // Record the current time [ms]
+    // Record the current time [ms]
     t_last = t_now;
 
     // Reset the encoder ticks counter
