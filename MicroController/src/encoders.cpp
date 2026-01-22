@@ -67,5 +67,5 @@ void encoders::print(){
     Serial.print(" rad/s | Right: ");
     Serial.print(omega_R);
     Serial.println(" rad/s");
+    delay(500);
 }
-

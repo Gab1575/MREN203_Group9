@@ -15,7 +15,7 @@ void setup() {
   Movement.startup();
 }
 void loop() {
-  Movement.forward(200); // Move forward at speed 150
+  Movement.forward(200);
   Encoders.run();
   Encoders.print();
   delay(100);
