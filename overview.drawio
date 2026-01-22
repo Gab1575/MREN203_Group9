@@ -1,0 +1,22 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36" version="29.3.4">
+  <diagram name="Page-1" id="AOBV9zgbVEW9MzxFcJ3a">
+    <mxGraphModel dx="679" dy="370" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="4wG-OG3e5vOC6L-eb2Z5-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" value="ESP32" vertex="1">
+          <mxGeometry height="140" width="60" x="370" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="4wG-OG3e5vOC6L-eb2Z5-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1ba1e2;fontColor=#ffffff;strokeColor=#006EAF;" value="PI" vertex="1">
+          <mxGeometry height="140" width="60" x="580" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="4wG-OG3e5vOC6L-eb2Z5-3" edge="1" parent="1" source="4wG-OG3e5vOC6L-eb2Z5-1" style="shape=link;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;width=5.238095238095237;fillColor=#dae8fc;strokeColor=#6c8ebf;" target="4wG-OG3e5vOC6L-eb2Z5-2" value="">
+          <mxGeometry relative="1" width="100" as="geometry">
+            <mxPoint x="390" y="410" as="sourcePoint" />
+            <mxPoint x="490" y="410" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
