@@ -1,7 +1,7 @@
 //IMU.h
 
-//PINS A4 SDA
-//PINS A5 SCL
+//PINS SDA
+//PINS SCL
 
 #ifndef IMU_H
 #define IMU_H
