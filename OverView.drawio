@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36" version="29.3.4">
   <diagram name="Page-1" id="AOBV9zgbVEW9MzxFcJ3a">
-    <mxGraphModel dx="815" dy="444" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="983" dy="536" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -144,6 +144,35 @@
         <mxCell id="dpZpkgET49BA1FsTcjTs-37" connectable="0" parent="1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Digital Interrupt" vertex="1">
           <mxGeometry x="330" y="540" as="geometry">
             <mxPoint x="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dpZpkgET49BA1FsTcjTs-40" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d80073;fontColor=#ffffff;strokeColor=#A50040;" value="Foxglove HMI" vertex="1">
+          <mxGeometry height="60" width="120" x="550" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="dpZpkgET49BA1FsTcjTs-41" edge="1" parent="1" style="shape=mxgraph.arrows2.wedgeArrowDashed2;html=1;bendable=0;startWidth=13.103448275862071;stepSize=15;rounded=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="4wG-OG3e5vOC6L-eb2Z5-2" value="">
+          <mxGeometry height="100" relative="1" width="100" as="geometry">
+            <mxPoint x="610" y="310" as="sourcePoint" />
+            <mxPoint x="770" y="360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dpZpkgET49BA1FsTcjTs-42" edge="1" parent="1" style="shape=mxgraph.arrows2.wedgeArrowDashed2;html=1;bendable=0;startWidth=13.103448275862071;stepSize=15;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="dpZpkgET49BA1FsTcjTs-40" value="">
+          <mxGeometry height="100" relative="1" width="100" as="geometry">
+            <mxPoint x="610" y="300" as="sourcePoint" />
+            <mxPoint x="640" y="330" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dpZpkgET49BA1FsTcjTs-43" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Wifi or BT&lt;div&gt;ROS Transmission&lt;/div&gt;" vertex="1">
+          <mxGeometry height="30" width="60" x="630" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="dpZpkgET49BA1FsTcjTs-44" parent="1" style="whiteSpace=wrap;html=1;aspect=fixed;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="LiDAR" vertex="1">
+          <mxGeometry height="40" width="40" x="720" y="375" as="geometry" />
+        </mxCell>
+        <mxCell id="dpZpkgET49BA1FsTcjTs-45" edge="1" parent="1" source="dpZpkgET49BA1FsTcjTs-44" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.95;entryY=0.179;entryDx=0;entryDy=0;entryPerimeter=0;" target="4wG-OG3e5vOC6L-eb2Z5-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="dpZpkgET49BA1FsTcjTs-46" connectable="0" parent="dpZpkgET49BA1FsTcjTs-45" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Unknown" vertex="1">
+          <mxGeometry relative="1" y="-1" as="geometry">
+            <mxPoint x="3" y="16" as="offset" />
           </mxGeometry>
         </mxCell>
       </root>
