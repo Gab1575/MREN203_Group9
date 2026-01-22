@@ -19,10 +19,10 @@ private:
     static void decodeEncoderTicksR();
     static void decodeEncoderTicksL();
 
-    static const byte SIGNAL_A = 2;
-    static const byte SIGNAL_B = 3;
-    static const byte SIGNAL_C = 4;
-    static const byte SIGNAL_D = 5;
+    static const byte SIGNAL_A = 3;
+    static const byte SIGNAL_B = 2;
+    static const byte SIGNAL_C = 5;
+    static const byte SIGNAL_D = 4;
 
     // Encoder ticks per (motor) revolution (TPR)
     static const int TPR = 3000;

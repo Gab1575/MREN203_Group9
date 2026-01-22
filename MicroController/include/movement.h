@@ -9,17 +9,20 @@
 class movement {    
 public:
     void startup();
-    
+    void forward(int speed);
+    void backward(int speed);
+    void stop();
+    void turn(int speed_l, int speed_r);
 private:
     // Wheel PWM pins (must be a PWM pin)
     static const int EA = 6;
-    static const int EB = 5;
+    static const int EB = 9;
 
     // Wheel direction digital pins
-    static const int I1 = 7;
-    static const int I2 = 4;
-    static const int I3 = 8;
-    static const int I4 = 9;
+    static const int I1 = 13;
+    static const int I2 = 12;
+    static const int I3 = 11;
+    static const int I4 = 10;
     // Motor PWM command variable [0-255]
     static byte u2;
     static byte u1;

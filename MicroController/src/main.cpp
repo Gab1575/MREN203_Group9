@@ -12,8 +12,10 @@ movement Movement;
 void setup() {
   Serial.begin(9600);
   Encoders.startup();
+  Movement.startup();
 }
 void loop() {
+  Movement.forward(200); // Move forward at speed 150
   Encoders.run();
   Encoders.print();
   delay(100);
