@@ -1,14 +1,16 @@
 //IMU.h
 
-//PINS SDA
-//PINS SCL
-
 #ifndef IMU_H
 #define IMU_H
 
 #include <Arduino.h>
+#include <Wire.h>
+#include <SPI.h>
 #include <Adafruit_LSM6DSOX.h>
 #include <Adafruit_LIS3MDL.h>
+
+#define SDA 8 
+#define SCL 9
 
 struct IMUData {
     float accelX;
@@ -26,7 +28,7 @@ class IMU {
 public:
     void startup();
     IMUData read();
-    void IMU::print();
+    void print();
 private:
     static const int IMU_ADDRESS = 0x68;
     int16_t accelX, accelY, accelZ;

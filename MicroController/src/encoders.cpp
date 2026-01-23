@@ -7,7 +7,7 @@ volatile long encoders::encoder_ticksR = 0;
 encoders::encoders(){}
 
 // LEFT This function is called when SIGNAL_A goes HIGH
-void encoders::decodeEncoderTicksL() {
+void IRAM_ATTR encoders::decodeEncoderTicksL() {
   if (digitalRead(SIGNAL_B) == LOW) {
     // SIGNAL_A leads SIGNAL_B, so count one way
     encoder_ticksL--;
@@ -18,7 +18,7 @@ void encoders::decodeEncoderTicksL() {
 }
 
 // RIGHT This function is called when SIGNAL_C goes HIGH
-void encoders::decodeEncoderTicksR() {
+void IRAM_ATTR encoders::decodeEncoderTicksR() {
   if (digitalRead(SIGNAL_D) == LOW) {
     // SIGNAL_C leads SIGNAL_D, so count one way
     encoder_ticksR--;
@@ -43,22 +43,22 @@ void encoders::startup() {
 }
 
 void encoders::run(){
-  // Get the elapsed time [ms]
   t_now = millis();
 
   if (t_now - t_last >= T) {
-    // Estimate the rotational speed [rad/s]
-    // Calculation: 2*PI * (ticks/TPR) * (1000ms / delta_t)
-    omega_L = 2.0 * PI * ((double)encoder_ticksL / (double)TPR) * 1000.0 / (double)(t_now - t_last);
-    omega_R = 2.0 * PI * ((double)encoder_ticksR / (double)TPR) * 1000.0 / (double)(t_now - t_last);
-
-    // Record the current time [ms]
-    t_last = t_now;
-
-    // Reset the encoder ticks counter
+    noInterrupts(); //pauses inturrupts while reading.
+    long currentTicksL = encoder_ticksL;
+    long currentTicksR = encoder_ticksR;
     encoder_ticksL = 0;
     encoder_ticksR = 0;
-    }
+    interrupts(); // Resume interrupts
+    
+    unsigned long dt = t_now - t_last;
+    t_last = t_now;
+
+    omega_L = 2.0 * PI * ((double)currentTicksL / (double)TPR) * 1000.0 / (double)dt;
+    omega_R = 2.0 * PI * ((double)currentTicksR / (double)TPR) * 1000.0 / (double)dt;
+  }
 }
 
 void encoders::print(){

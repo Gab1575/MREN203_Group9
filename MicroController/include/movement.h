@@ -5,6 +5,15 @@
 
 #include <Arduino.h>
 #include "encoders.h"
+#include "IMU.h"
+
+#define EA 6  // PWM pin for left wheel
+#define EB 9  // PWM pin for right wheel
+
+#define I1 13 // Direction pin 1 for left wheel
+#define I2 12 // Direction pin 2 for left wheel
+#define I3 11 // Direction pin 1 for right wheel
+#define I4 10 // Direction pin 2 for right wheel
 
 class movement {    
 public:
@@ -14,18 +23,7 @@ public:
     void stop();
     void turn(int speed_l, int speed_r);
 private:
-    // Wheel PWM pins (must be a PWM pin)
-    static const int EA = 6;
-    static const int EB = 9;
 
-    // Wheel direction digital pins
-    static const int I1 = 13;
-    static const int I2 = 12;
-    static const int I3 = 11;
-    static const int I4 = 10;
-    // Motor PWM command variable [0-255]
-    static byte u2;
-    static byte u1;
 };
 
 #endif // MOVEMENT_H

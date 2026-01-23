@@ -1,17 +1,20 @@
 #include "IMU.h"
 
 void IMU::startup() {
+
+  Wire.begin(SDA, SCL);
+
   if (!sox.begin_I2C()) {
-    Serial.println("Failed to find LSM6DSOX chip");
+    Serial.println("Failed to find LSM6DSOX");
     while (1) { delay(10); }
   }
-  Serial.println("LSM6DSOX Found!");
+  Serial.println("LSM6DSOX Found");
 
   if (!lis3mdl.begin_I2C()) {
-    Serial.println("Failed to find LIS3MDL chip");
+    Serial.println("Failed to find LIS3MDL");
     while (1) { delay(10); }
   }
-  Serial.println("LIS3MDL Found!");
+  Serial.println("LIS3MDL Found");
 
 sox.setAccelRange(LSM6DS_ACCEL_RANGE_4_G);
 sox.setGyroRange(LSM6DS_GYRO_RANGE_250_DPS);

@@ -6,6 +6,9 @@ void movement::startup() {
     pinMode(EA, OUTPUT);
     pinMode(I1, OUTPUT);
     pinMode(I2, OUTPUT);
+    pinMode(EB, OUTPUT);
+    pinMode(I3, OUTPUT);    
+    pinMode(I4, OUTPUT);
 }
 
 void movement::forward(int speed) {
@@ -64,3 +67,16 @@ void movement::turn(int speed_l, int speed_r) {
     analogWrite(EA, speed_l);
     analogWrite(EB, speed_r);
 }
+
+
+/*WHAT NEEDS TO BE DONE!
+We need to give movement files a linear and angular velocity.
+
+2 PID controllers:
+    1- For data off of the encoders (wheel speed)
+    2- For data off of the IMU (angular velocity)
+
+Then, we can take both PID outputs and combine them to get the 
+final wheel speeds.
+
+*/
