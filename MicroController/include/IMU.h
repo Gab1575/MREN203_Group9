@@ -12,20 +12,20 @@
 #define SDA 8 
 #define SCL 9
 
-struct IMUData {
-    float accelX;
-    float accelY;
-    float accelZ;
-    float gyroX;
-    float gyroY;
-    float gyroZ;
-    float magX;
-    float magY;
-    float magZ;
-};
-
 class IMU {
 public:
+    struct IMUData {
+        float accelX;
+        float accelY;
+        float accelZ;
+        float gyroX;
+        float gyroY;
+        float gyroZ;
+        float magX;
+        float magY;
+        float magZ;
+    };
+
     void startup();
     IMUData read();
     void print();

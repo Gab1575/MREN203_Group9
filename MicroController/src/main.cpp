@@ -6,7 +6,7 @@
 
 double Lspeed;
 double Rspeed; 
-IMUData imuData;
+IMU::IMUData imuData;
 
 IMU imu;
 

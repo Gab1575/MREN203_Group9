@@ -1,7 +1,5 @@
 #include "movement.h"
 
-//takes in a linear and angular velocity and sends wheel speeds
-
 void movement::startup() {
     pinMode(EA, OUTPUT);
     pinMode(I1, OUTPUT);
@@ -62,21 +60,48 @@ void movement::turn(int speed_l, int speed_r) {
         digitalWrite(I4, HIGH);
         speed_r = -speed_r; // Make speed positive for PWM
     }
-    
     // Set motor speeds
     analogWrite(EA, speed_l);
     analogWrite(EB, speed_r);
 }
+double movement::LinearPID(double setpoint, double current, double dt) {
+    double error = setpoint - current;
+    integral_linear += error * dt;
+    if (integral_linear > LIN_MAX_INTEGRAL) integral_linear = LIN_MAX_INTEGRAL;     //windup guard
+    if (integral_linear < -LIN_MAX_INTEGRAL) integral_linear = -LIN_MAX_INTEGRAL;
+    double derivative = (error - prev_err_linear) / dt;
+    prev_err_linear = error;
+    return (LIN_KP * error) + (LIN_KI * integral_linear) + (LIN_KD * derivative);
+}
 
+double movement::AngularPID(double setpoint, double current, double dt) {
+    double error = setpoint - current;
+    integral_angular += error * dt;
+    if (integral_angular > ANG_MAX_INTEGRAL) integral_angular = ANG_MAX_INTEGRAL;   //windup guard
+    if (integral_angular < -ANG_MAX_INTEGRAL) integral_angular = -ANG_MAX_INTEGRAL;
+    double derivative = (error - prev_err_angular) / dt;
+    prev_err_angular = error;
+    return (ANG_KP * error) + (ANG_KI * integral_angular) + (ANG_KD * derivative);
+}
 
-/*WHAT NEEDS TO BE DONE!
-We need to give movement files a linear and angular velocity.
+void movement::move(double targetW, double targetV, double dt) {
 
-2 PID controllers:
-    1- For data off of the encoders (wheel speed)
-    2- For data off of the IMU (angular velocity)
+    IMU::IMUData data = imu.read();
+    double W = data.gyroZ; //anguklar velocity from IMU
+    double V = (enc.omega_L + enc.omega_R) / 2.0; //linear velocity from encoders
 
-Then, we can take both PID outputs and combine them to get the 
-final wheel speeds.
+    double v_out = LinearPID(targetV, V, dt);
+    double w_out = AngularPID(targetW, W, dt);
 
-*/
+    // Left = Linear - Angular | Right = Linear + Angular
+    double left = v_out - w_out;
+    double right = v_out + w_out;
+
+    if (left > 255) left = 255;
+    else if (left < -255) left = -255;
+   
+    if (right > 255) right = 255;
+    else if (right < -255) right = -255;
+
+    turn(static_cast<int>(left), static_cast<int>(right)); //converts to int for motor commands
+}

@@ -26,7 +26,7 @@ lis3mdl.setRange(LIS3MDL_RANGE_4_GAUSS);
 lis3mdl.setDataRate(LIS3MDL_DATARATE_155_HZ);
 }
 
-IMUData IMU::read() {
+IMU::IMUData IMU::read() {
   sox.getEvent(&accel, &gyro, &temp);
   lis3mdl.getEvent(&mag);
     IMUData data;
