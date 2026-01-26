@@ -97,7 +97,7 @@ void movement::move(double targetW, double targetV, double dt) {
     double left = v_out - w_out;
     double right = v_out + w_out;
 
-    if (left > 255) left = 255;
+    if (left > 255) left = 255;         //not sure if this is the right way to clamp with 
     else if (left < -255) left = -255;
    
     if (right > 255) right = 255;

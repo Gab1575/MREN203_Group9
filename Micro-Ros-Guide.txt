@@ -1,0 +1,184 @@
+================================================================================
+                MICRO-ROS ON ARDUINO: THE COMPLETE GUIDE
+================================================================================
+
+1. HOW IT WORKS (THE ARCHITECTURE)
+--------------------------------------------------------------------------------
+Micro-ROS allows microcontrollers (like the ESP32) to join a ROS 2 network. 
+It is not a standalone node; it uses a Client-Server architecture.
+
+[The Client] (Your ESP32)
+  - Runs your Arduino code.
+  - Collects sensor data and "publishes" it.
+  - Does NOT talk directly to other ROS nodes. It talks only to the Agent.
+
+[The Transport] ( The Wire)
+  - The physical connection between the Client and Agent.
+  - usually Serial (USB) or Wi-Fi (UDP).
+
+[The Agent] (Your Computer/Raspberry Pi)
+  - Acts as the gateway/translator.
+  - Receives packed data from the ESP32 and broadcasts it as standard 
+    ROS 2 messages to the rest of the network.
+
+
+2. THE CODE: LINE-BY-LINE EXPLANATION
+--------------------------------------------------------------------------------
+Below is an explanation of the critical functions used in the main.cpp template.
+
+>>> PHASE A: SETUP (Runs once in void setup)
+
+1. set_microros_transports();
+   - Configures the physical connection.
+   - Default: Serial (USB) at 115,200 baud.
+   - For Wi-Fi, use: set_microros_wifi_transports("SSID", "PASS", "IP", PORT);
+
+2. allocator = rcl_get_default_allocator();
+   - Micro-ROS needs to know how to reserve RAM. This connects it to the 
+     standard Arduino memory manager.
+
+3. rclc_support_init(&support, 0, NULL, &allocator);
+   - Initializes the "Session" or "Context".
+   - This builds the communication stack.
+
+4. rclc_node_init_default(&node, "my_esp32_node", "", &support);
+   - Creates the ROS 2 node entity.
+   - "my_esp32_node" is the name seen in `ros2 node list`.
+
+5. rclc_publisher_init_default(...);
+   - Registers a publisher.
+   - CRITICAL: You must use the `ROSIDL_GET_MSG_TYPE_SUPPORT` macro to define 
+     the message type (e.g., Int32, String, Twist).
+
+6. rclc_executor_init(&executor, &support.context, 1, &allocator);
+   - The Executor manages tasks (callbacks and timers).
+   - The number '1' is the number of handles. If you add a Subscriber later, 
+     you MUST increase this number (e.g., to 2), or the code will crash.
+
+
+>>> PHASE B: LOOP (Runs repeatedly in void loop)
+
+1. rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
+   - Gives Micro-ROS time to process work.
+   - Checks for incoming subscriptions or timer events.
+   - The '100' is a timeout (100ms). It does "some" work and then releases 
+     the CPU back to your loop.
+
+3.THE CODE: HOW TO ADD A PUBLISHER (SENDING DATA)
+--------------------------------------------------------------------------------
+A Publisher allows the ESP32 to send data (like sensor readings) to ROS 2.
+
+STEP A: DEFINE (Global Variables)
+   rcl_publisher_t publisher;
+   std_msgs__msg__Int32 msg;  // The message container
+
+STEP B: INITIALIZE (In void setup)
+   rclc_publisher_init_default(
+      &publisher,
+      &node,
+      ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
+      "my_topic_name"
+   );
+
+STEP C: PUBLISH (In a timer or loop)
+   // Update the data
+   msg.data++; 
+   // Send it
+   rcl_publish(&publisher, &msg, NULL);
+
+
+4. THE CODE: HOW TO ADD A SUBSCRIBER (RECEIVING DATA)
+--------------------------------------------------------------------------------
+A Subscriber allows the ESP32 to listen for commands (like "Turn LED On"). 
+This requires a Callback Function.
+
+STEP A: DEFINE (Global Variables)
+   rcl_subscription_t subscriber;
+   std_msgs__msg__Int32 sub_msg; // Where incoming data is stored
+
+   // The Callback: Runs automatically when data arrives
+   void subscription_callback(const void * msgin) {
+      const std_msgs__msg__Int32 * msg = (const std_msgs__msg__Int32 *)msgin;
+      if (msg->data == 1) {
+         digitalWrite(LED_PIN, HIGH);
+      }
+   }
+
+STEP B: INITIALIZE (In void setup)
+   rclc_subscription_init_default(
+      &subscriber,
+      &node,
+      ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
+      "cmd_led" // Topic to listen to
+   );
+
+STEP C: ADD TO EXECUTOR (Crucial!)
+   rclc_executor_add_subscription(
+      &executor,
+      &subscriber,
+      &sub_msg,
+      &subscription_callback,
+      ON_NEW_DATA
+   );
+
+
+5. THE "HANDLE COUNT" RULE (CRITICAL)
+--------------------------------------------------------------------------------
+The Executor is the "Manager" of the system. When you initialize it, you MUST 
+tell it exactly how many tasks it needs to manage.
+
+Formula: 
+Handles = (Number of Subscribers) + (Number of Timers) + (Number of Services)
+*Note: Publishers do NOT count as handles.*
+
+Example 1: 1 Publisher, 1 Timer.
+   Handles = 0 Subs + 1 Timer = 1.
+   rclc_executor_init(&executor, &context, 1, &allocator);
+
+Example 2: 1 Publisher, 1 Subscriber, 1 Timer.
+   Handles = 1 Sub + 1 Timer = 2.
+   rclc_executor_init(&executor, &context, 2, &allocator);
+
+**IF THIS NUMBER IS TOO LOW, YOUR ESP32 WILL CRASH OR FAIL TO START.**
+
+6. STEP-BY-STEP TUTORIAL
+--------------------------------------------------------------------------------
+
+STEP 1: FLASH THE CODE
+1. Open PlatformIO (VS Code).
+2. Ensure your platformio.ini has: `lib_deps = https://github.com/micro-ROS/micro_ros_arduino`
+3. Paste the template code into main.cpp.
+4. Build and Upload to the ESP32.
+   *IMPORTANT: Do NOT open the Serial Monitor. The port is now busy sending 
+   binary ROS data.*
+
+STEP 2: RUN THE AGENT (ON HOST COMPUTER)
+You need a machine with Docker installed to act as the bridge.
+
+1. Plug the ESP32 into the computer.
+2. Run this Docker command (Update /dev/ttyUSB0 to match your port):
+   
+   docker run -it --rm -v /dev:/dev --privileged --net=host microros/micro-ros-agent:humble serial --dev /dev/ttyUSB0 -b 115200
+
+STEP 3: SYNC AND VERIFY
+1. Once the Docker Agent is running, press the RESET (RST/EN) button on the ESP32.
+2. Watch the Docker terminal. You should see:
+   [ micro_ros_agent ] Session established
+3. Open a new terminal on your computer.
+4. Type `ros2 node list` -> You should see /my_esp32_node.
+5. Type `ros2 topic echo /micro_ros_platformio_node_publisher` -> You should see data.
+
+
+7. COMMON TROUBLESHOOTING
+--------------------------------------------------------------------------------
+ISSUE: Stuck in setup / Agent doesn't show "Session established"
+FIX:   The Agent must be running BEFORE the ESP32 boots. 
+       Start Docker first, THEN press the Reset button on the ESP32.
+
+ISSUE: Garbage text in Serial Monitor
+FIX:   This is normal. The ESP32 is outputting binary XRCE-DDS data. 
+       Close the Serial Monitor; it interferes with the Agent.
+
+ISSUE: Build failed "command not found"
+FIX:   Ensure you are using `micro_ros_arduino` in platformio.ini, NOT 
+       `micro_ros_platformio`, which requires Linux tools.

@@ -6,7 +6,7 @@
 #include <Arduino.h>
 
 #define SIGNAL_A 21
-#define SIGNAL_B 15
+#define SIGNAL_B 1
 #define SIGNAL_C 38
 #define SIGNAL_D 39
 
