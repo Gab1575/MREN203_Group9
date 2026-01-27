@@ -1,4 +1,4 @@
-//movement.h
+    //movement.h
 
 #ifndef MOVEMENT_H
 #define MOVEMENT_H
@@ -19,13 +19,13 @@
 #define ANG_MAX_INTEGRAL 100.0
 
 
-#define EA 6  // PWM pin for left wheel
-#define EB 9  // PWM pin for right wheel
+#define EA 10  // PWM pin for left wheel
+#define EB 11  // PWM pin for right wheel
 
-#define I1 13 // Direction pin 1 for left wheel
-#define I2 12 // Direction pin 2 for left wheel
-#define I3 11 // Direction pin 1 for right wheel
-#define I4 10 // Direction pin 2 for right wheel
+#define I1 7 // Direction pin 1 for left wheel
+#define I2 8 // Direction pin 2 for left wheel
+#define I3 9 // Direction pin 1 for right wheel
+#define I4 12 // Direction pin 2 for right wheel
 
 class movement {    
 public:

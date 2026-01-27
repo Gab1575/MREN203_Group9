@@ -5,10 +5,10 @@
 
 #include <Arduino.h>
 
-#define SIGNAL_A 21
-#define SIGNAL_B 1
-#define SIGNAL_C 38
-#define SIGNAL_D 39
+#define SIGNAL_A 2
+#define SIGNAL_B 4
+#define SIGNAL_C 3
+#define SIGNAL_D 6
 
 class encoders {
 public:
