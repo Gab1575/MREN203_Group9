@@ -86,8 +86,8 @@ double movement::AngularPID(double setpoint, double current, double dt) {
 
 void movement::move(double targetW, double targetV, double dt) {
 
-    IMU::IMUData data = imu.read();
-    double W = data.gyroZ; //anguklar velocity from IMU
+    InternalIMU::IMUData data = imu.read();
+    double W = data.gyroZ; // angular velocity from IMU
     double V = (enc.omega_L + enc.omega_R) / 2.0; //linear velocity from encoders
 
     double v_out = LinearPID(targetV, V, dt);

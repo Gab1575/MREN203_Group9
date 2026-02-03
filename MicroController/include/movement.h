@@ -19,13 +19,13 @@
 #define ANG_MAX_INTEGRAL 100.0
 
 
-#define EA 10  // PWM pin for left wheel
+#define EA 6  // PWM pin for left wheel
 #define EB 11  // PWM pin for right wheel
 
-#define I1 7 // Direction pin 1 for left wheel
-#define I2 8 // Direction pin 2 for left wheel
-#define I3 9 // Direction pin 1 for right wheel
-#define I4 12 // Direction pin 2 for right wheel
+#define I1 8 // Direction pin 1 for left wheel
+#define I2 7 // Direction pin 2 for left wheel
+#define I4 9 // Direction pin 1 for right wheel
+#define I3 12 // Direction pin 2 for right wheel
 
 class movement {    
 public:
@@ -39,7 +39,7 @@ private:
     double LinearPID(double setpoint, double current, double dt);
     double AngularPID(double setpoint, double current, double dt);
 
-    IMU imu;
+    InternalIMU imu;
     encoders enc;
     double integral_linear = 0, prev_err_linear = 0;
     double integral_angular = 0, prev_err_angular = 0;

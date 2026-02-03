@@ -6,9 +6,9 @@
 
 double Lspeed;
 double Rspeed; 
-IMU::IMUData imuData;
+InternalIMU::IMUData imuData;
 
-IMU imu;
+InternalIMU imu;
 movement move;
 encoders enc;
 
@@ -17,16 +17,12 @@ void setup() {
   if(!Serial) {
     while (1); // Wait for Serial to be ready
   }
-  //imu.startup();
-  //move.startup();
+  imu.startup();
+  move.startup();
   enc.startup();
 }
 void loop() {
-  //imuData = imu.read();
-  //imu.print();
-  //delay(100);
-  //move.forward(200); // Move forward at 0.2 m/s
+  imuData = imu.read();
+  move.move(0,200, 0.1); // Move forward at 200 mm/s
   enc.run();
-  enc.print();
-  delay(100);
 }
