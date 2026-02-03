@@ -7,7 +7,7 @@ volatile long encoders::encoder_ticksR = 0;
 encoders::encoders(){}
 
 // LEFT This function is called when SIGNAL_A goes HIGH
-void IRAM_ATTR encoders::decodeEncoderTicksL() {
+void encoders::decodeEncoderTicksL() {
   if (digitalRead(SIGNAL_B) == LOW) {
     // SIGNAL_A leads SIGNAL_B, so count one way
     encoder_ticksL--;
@@ -18,7 +18,7 @@ void IRAM_ATTR encoders::decodeEncoderTicksL() {
 }
 
 // RIGHT This function is called when SIGNAL_C goes HIGH
-void IRAM_ATTR encoders::decodeEncoderTicksR() {
+void encoders::decodeEncoderTicksR() {
   if (digitalRead(SIGNAL_D) == LOW) {
     // SIGNAL_C leads SIGNAL_D, so count one way
     encoder_ticksR--;

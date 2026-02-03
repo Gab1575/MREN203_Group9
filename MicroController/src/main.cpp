@@ -6,9 +6,11 @@
 
 double Lspeed;
 double Rspeed; 
-IMU::IMUData imuData;
+InternalIMU::IMUData imuData;
 
-IMU imu;
+InternalIMU imu;
+movement move;
+encoders enc;
 
 void setup() {
   Serial.begin(115200);
@@ -16,9 +18,11 @@ void setup() {
     while (1); // Wait for Serial to be ready
   }
   imu.startup();
+  move.startup();
+  enc.startup();
 }
 void loop() {
   imuData = imu.read();
-  imu.print();
-  delay(100);
+  move.move(0,200, 0.1); // Move forward at 200 mm/s
+  enc.run();
 }

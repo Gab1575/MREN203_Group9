@@ -5,10 +5,10 @@
 
 #include <Arduino.h>
 
-#define SIGNAL_A 21
-#define SIGNAL_B 1
-#define SIGNAL_C 38
-#define SIGNAL_D 39
+#define SIGNAL_A 2
+#define SIGNAL_B 3
+#define SIGNAL_C 4
+#define SIGNAL_D 5
 
 class encoders {
 public:
@@ -23,8 +23,8 @@ public:
 
 private:
     //IRAM_ATTR is needed for interrupt functions, forces code into the faster IRAM memory
-    static void IRAM_ATTR decodeEncoderTicksR(); 
-    static void IRAM_ATTR decodeEncoderTicksL();
+    static void decodeEncoderTicksR(); 
+    static void decodeEncoderTicksL();
 
     // Encoder ticks per (motor) revolution (TPR)
     static const int TPR = 3000;
