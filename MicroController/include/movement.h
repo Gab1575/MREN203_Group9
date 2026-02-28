@@ -1,48 +1,70 @@
-    //movement.h
+// movement.h
 
 #ifndef MOVEMENT_H
 #define MOVEMENT_H
 
-#include <Arduino.h>
-#include "encoders.h"
 #include "IMU.h"
+#include "encoders.h"
+#include <Arduino.h>
+#include <map>
+#include <EEPROM.h>
 
-//PID CONTROLS:
-#define LIN_KP 1.0
-#define LIN_KI 0.0
-#define LIN_KD 0.0
-#define LIN_MAX_INTEGRAL 100.0
+// MACRO-PULSING CONTROLS
+#define MIN_PWM 130
+#define MACRO_WINDOW_MS 100 
 
-#define ANG_KP 1.0
-#define ANG_KI 0.0
-#define ANG_KD 0.0 
-#define ANG_MAX_INTEGRAL 100.0
+// PID CONTROLS:
+#define LEFT_KP 0
+#define LEFT_KD 0
+#define LEFT_KI 0
+#define LEFT_MAX_INTEGRAL 100.0
 
+#define RIGHT_KP 0
+#define RIGHT_KD 0
+#define RIGHT_KI 0
+#define RIGHT_MAX_INTEGRAL 100.0
 
+#define ANG_KP 0
+#define ANG_KI 0
+#define ANG_KD 0.0
+#define ANG_MAX_INTEGRAL 0
+
+//MOTOR PINS
 #define EA 6  // PWM pin for left wheel
-#define EB 11  // PWM pin for right wheel
-
-#define I1 8 // Direction pin 1 for left wheel
-#define I2 7 // Direction pin 2 for left wheel
-#define I4 9 // Direction pin 1 for right wheel
+#define EB 11 // PWM pin for right wheel
+#define I1 8  // Direction pin 1 for left wheel
+#define I2 7  // Direction pin 2 for left wheel
+#define I4 9  // Direction pin 1 for right wheel
 #define I3 12 // Direction pin 2 for right wheel
 
-class movement {    
+class movement {
 public:
-    void move(double targetW, double targetV, double dt);
-    void startup();
-    void forward(int speed);
-    void backward(int speed);
-    void stop();
-    void turn(int speed_l, int speed_r);
-private:
-    double LinearPID(double setpoint, double current, double dt);
-    double AngularPID(double setpoint, double current, double dt);
+  void move(double targetW, double targetV, double dt, double Lencoder, double Rencoder, double actual_W);
+  void startup();
+  void forward(int speed);
+  void backward(int speed);
+  void stop();
+  void turn(int speed_l, int speed_r);
+  void calibrateFeedforward();
 
-    InternalIMU imu;
-    encoders enc;
-    double integral_linear = 0, prev_err_linear = 0;
-    double integral_angular = 0, prev_err_angular = 0;
+private:
+  double AngularPID(double setpoint, double current, double dt);
+  double LeftPID(double setpoint, double current, double dt);
+  double RightPID(double setpoint, double current, double dt);
+  double calculateFeedforward(double targetVelocity, const std::map<double, int>& calibrationMap);
+
+  double integral_angular = 0, prev_err_angular = 0;
+  double integral_left = 0, prev_err_left = 0;
+  double integral_right = 0, prev_err_right = 0;
+  
+  bool is_pulsing_off_left = false; 
+  bool is_pulsing_off_right = false;
+  //PASTE CALIBRATION MAPS BELOW 
+  //LEFT MAP:
+  std::map<double, int> calibrateFeedforward_L;
+
+  //RIGHT MAP:
+  std::map<double, int> calibrateFeedforward_R;
 };
 
 #endif // MOVEMENT_H
