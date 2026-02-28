@@ -9,6 +9,21 @@ void movement::startup() {
   pinMode(I4, OUTPUT);
 }
 
+double movement::AngularPID(double setpoint, double current, double dt) {
+
+  double error = setpoint - current;
+  integral_angular += error * dt; 
+  if (integral_angular > ANG_MAX_INTEGRAL) integral_angular = ANG_MAX_INTEGRAL;
+  if (integral_angular < -ANG_MAX_INTEGRAL) integral_angular = -ANG_MAX_INTEGRAL;
+  
+  double derivative = (error - prev_err_angular) / dt;
+  prev_err_angular = error;
+  
+  double correction = (ANG_KP * error) + (ANG_KI * integral_angular) + (ANG_KD * derivative);
+  
+  return correction;
+}
+
 double movement::LeftPID(double setpoint, double current, double dt) {
   double error = setpoint - current;
     integral_left += error * dt;
@@ -53,11 +68,17 @@ void movement::move(double targetW, double targetV, double dt, double Lencoder, 
     current_target_v -= max_step; // Accelerate smoothly backward (or brake)
   } 
   else {
-    current_target_v = targetV;   // We reached the target, hold steady
+    current_target_v = targetV; 
   }
 
-  double left = LeftPID(current_target_v, Lencoder, dt);
-  double right = RightPID(current_target_v, -Rencoder, dt);
+  double w_correction = AngularPID(targetW, actual_W, dt);
+  double corrected_W = targetW + w_correction;
+
+  double target_vel_L = current_target_v - ((corrected_W * TRACK_WIDTH) / 2.0);
+  double target_vel_R = current_target_v + ((corrected_W * TRACK_WIDTH) / 2.0);
+
+  double left = LeftPID(target_vel_L, Lencoder, dt);
+  double right = RightPID(target_vel_R, -Rencoder, dt);
 
   if (left > 255) left = 255;
   else if (left < -255) left = -255;

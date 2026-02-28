@@ -11,7 +11,7 @@
 
 // MACRO-PULSING CONTROLS
 #define MIN_PWM 130
-#define MACRO_WINDOW_MS 50
+#define MACRO_WINDOW_MS 50  //should be half the encoder sampling rate
 
 // PID CONTROLS:
 #define LEFT_KP 0
@@ -23,6 +23,15 @@
 #define RIGHT_KD 0
 #define RIGHT_KI 0
 #define RIGHT_MAX_INTEGRAL 100.0
+
+#define ANGULAR_KP 1.5
+#define ANGULAR_KD 0
+#define ANGULAR_KI 0
+#define ANGULAR_MAX_INTEGRAL 100.0
+
+#define MAX_ACCELERATION 10.0 // Max change in velocity per second
+
+#define TRACK_WIDTH 0.28
 
 //MOTOR PINS
 #define EA 6  // PWM pin for left wheel
@@ -42,6 +51,7 @@ public:
 private:
   double LeftPID(double setpoint, double current, double dt);
   double RightPID(double setpoint, double current, double dt);
+  double AngularPID(double setpoint, double current, double dt);
   double calculateFeedforward(double targetVelocity, const std::map<double, int>& calibrationMap);
 
   double integral_angular = 0, prev_err_angular = 0;
@@ -53,8 +63,7 @@ private:
 
   // Acceleration Control
   double current_target_v = 0.0; 
-  const double MAX_ACCELERATION = 10.0;
-  
+
   //PASTE CALIBRATION MAPS BELOW 
   //LEFT MAP:
   std::map<double, int> calibrateFeedforward_L;
