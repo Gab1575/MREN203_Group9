@@ -9,75 +9,6 @@ void movement::startup() {
   pinMode(I4, OUTPUT);
 }
 
-void movement::forward(int speed) {
-  // Set motor directions for forward movement
-  digitalWrite(I1, HIGH);
-  digitalWrite(I2, LOW);
-
-  digitalWrite(I3, HIGH);
-  digitalWrite(I4, LOW);
-
-  // Set motor speeds
-  analogWrite(EA, speed);
-  analogWrite(EB, speed);
-}
-
-void movement::backward(int speed) {
-  // Set motor directions for backward movement
-  digitalWrite(I1, LOW);
-  digitalWrite(I2, HIGH);
-
-  digitalWrite(I3, LOW);
-  digitalWrite(I4, HIGH);
-
-  // Set motor speeds
-  analogWrite(EA, speed);
-  analogWrite(EB, speed);
-}
-
-void movement::stop() {
-  // Stop both motors
-  analogWrite(EA, 0);
-  analogWrite(EB, 0);
-}
-
-void movement::turn(int speed_l, int speed_r) {
-  // Set motor directions based on speed signs
-  if (speed_l >= 0) {
-    digitalWrite(I1, HIGH);
-    digitalWrite(I2, LOW);
-  } else {
-    digitalWrite(I1, LOW);
-    digitalWrite(I2, HIGH);
-    speed_l = -speed_l; // Make speed positive for PWM
-  }
-
-  if (speed_r >= 0) {
-    digitalWrite(I3, HIGH);
-    digitalWrite(I4, LOW);
-  } else {
-    digitalWrite(I3, LOW);
-    digitalWrite(I4, HIGH);
-    speed_r = -speed_r; // Make speed positive for PWM
-  }
-  // Set motor speeds
-  analogWrite(EA, speed_l);
-  analogWrite(EB, speed_r);
-}
-
-double movement::AngularPID(double setpoint, double current, double dt) {
-  double error = setpoint - current;
-  
-  integral_angular += error * dt; 
-  
-  if (integral_angular > ANG_MAX_INTEGRAL) integral_angular = ANG_MAX_INTEGRAL;
-  if (integral_angular < -ANG_MAX_INTEGRAL) integral_angular = -ANG_MAX_INTEGRAL;
-  
-  double derivative = (error - prev_err_angular) / dt;
-  prev_err_angular = error;
-  return (ANG_KP * error) + (ANG_KI * integral_angular) + (ANG_KD * derivative);
-}
-
 double movement::LeftPID(double setpoint, double current, double dt) {
   double error = setpoint - current;
     integral_left += error * dt;
@@ -113,8 +44,20 @@ double movement::RightPID(double setpoint, double current, double dt) {
 
 void movement::move(double targetW, double targetV, double dt, double Lencoder, double Rencoder, double actual_W) {
   
-  double left = LeftPID(targetV, Lencoder, dt);
-  double right = RightPID(targetV, -Rencoder, dt);
+  double max_step = MAX_ACCELERATION * dt;
+
+  if (targetV > current_target_v + max_step) {
+    current_target_v += max_step; // Accelerate smoothly forward
+  } 
+  else if (targetV < current_target_v - max_step) {
+    current_target_v -= max_step; // Accelerate smoothly backward (or brake)
+  } 
+  else {
+    current_target_v = targetV;   // We reached the target, hold steady
+  }
+
+  double left = LeftPID(current_target_v, Lencoder, dt);
+  double right = RightPID(current_target_v, -Rencoder, dt);
 
   if (left > 255) left = 255;
   else if (left < -255) left = -255;
@@ -122,12 +65,79 @@ void movement::move(double targetW, double targetV, double dt, double Lencoder, 
   if (right > 255) right = 255;
   else if (right < -255) right = -255;
 
-  Serial.print("Left PID output: ");
-    Serial.print(left);
-    Serial.print(" | Right PID output: ");
-    Serial.println(right);
+  unsigned long current_time = millis();
+  
+  if (abs(left) > 0 && abs(left)<MIN_PWM){
+    double duty_cycle = abs(left) / MIN_PWM;
+    double on_time = duty_cycle * MACRO_WINDOW_MS;
+    
+    if (current_time - macro_timer_L >= MACRO_WINDOW_MS) {
+      macro_timer_L = current_time; 
+    }
 
-  turn(static_cast<int>(left), static_cast<int>(right)); 
+    if (current_time - macro_timer_L < on_time) {
+      int active_pwm = (left > 0) ? MIN_PWM : -MIN_PWM;   //forward or backward
+      run(active_pwm, 0); 
+    } else {
+      run(0, 0);
+    }
+    
+  } 
+  else {
+    macro_timer_L = current_time; 
+    run(left, 0);
+  }
+  
+  if (abs(right) > 0 && abs(right)<MIN_PWM){
+    double duty_cycle = abs(right) / MIN_PWM;
+    double on_time = duty_cycle * MACRO_WINDOW_MS;
+    
+    if (current_time - macro_timer_R >= MACRO_WINDOW_MS) {
+      macro_timer_R = current_time; 
+    }
+
+    if (current_time - macro_timer_R < on_time) {
+      int active_pwm = (right > 0) ? MIN_PWM : -MIN_PWM;   //forward or backward
+      run(active_pwm, 1); 
+    } else {
+      run(0, 1);
+    }
+    
+  } 
+  else {
+    macro_timer_R = current_time; 
+    run(right, 1);
+  }
+  
+}
+
+void movement::run(int PWM, bool side) {
+  if (side == 0) { // Left side
+    if (PWM > 0) {
+      digitalWrite(I1, HIGH);
+      digitalWrite(I2, LOW);
+      analogWrite(EA, PWM);
+    } else if (PWM < 0) {
+      digitalWrite(I1, LOW);
+      digitalWrite(I2, HIGH);
+      analogWrite(EA, -PWM);
+    } else {
+      analogWrite(EA, 0); // Stop left motor
+    }
+  } else { // Right side
+    if (PWM > 0) {
+      digitalWrite(I3, HIGH);
+      digitalWrite(I4, LOW);
+      analogWrite(EB, PWM);
+    } else if (PWM < 0) {
+      digitalWrite(I3, LOW);
+      digitalWrite(I4, HIGH);
+      analogWrite(EB, -PWM);
+    } else {
+      analogWrite(EB, 0); // Stop right motor
+    }
+  }
+
 }
 
 void movement::calibrateFeedforward() {
@@ -140,7 +150,8 @@ void movement::calibrateFeedforward() {
   for (int speed = MIN_PWM; speed <= 255; speed += 5){
     Serial.print("Calibrating at speed: ");
     Serial.println(speed);
-    forward(speed);
+    run(speed, 0); // Left motor forward
+    run(speed, 1); // Right motor forward
     delay(500); // Allow time for the motors to reach the target speed
     
     for (int i = 0; i < 10; i++) {
@@ -179,7 +190,8 @@ void movement::calibrateFeedforward() {
     calibrateFeedforward_R.insert({movingAVG_R, speed});
   }
 
-  forward(0); // Stop the robot after calibration
+  run(0, 0); // Left motor forward
+  run(0, 1); // Right motor forward
 
   Serial.println("\n// ==========================================");
   Serial.println("// COPY AND PASTE CALIBRATION MAPS BELOW");
@@ -227,13 +239,13 @@ double movement::calculateFeedforward(double target, const std::map<double, int>
   auto upper = calibrationMap.lower_bound(absTarget);   
   if(upper == calibrationMap.end()) {
     if (target < 0) {
-      return -255; //return max reverse PWM if target exceeds range
+      return -255; //return max PWM if target exceeds range
     }
     else return 255; 
   }
   if (upper == calibrationMap.begin()) {
     if (target < 0) {
-      return -upper->second; //return min reverse PWM if target is below range
+      return -upper->second; //return min PWM if target is below range
     }
     else return upper->second; 
   }
