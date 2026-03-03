@@ -37,7 +37,7 @@ private:
     static volatile long encoder_ticksR;
 
     // Sampling interval for measurements in milliseconds
-    const unsigned int T = 100; // 0.1 second
+    const unsigned int T = 300; // 0.3 second
 
     // Counters for milliseconds during interval
     unsigned long t_now = 0;

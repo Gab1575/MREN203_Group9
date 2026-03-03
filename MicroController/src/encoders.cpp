@@ -62,10 +62,17 @@ void encoders::run(){
 }
 
 void encoders::print(){
+  unsigned long t_now1 = millis(); 
+  
+  static unsigned long t_last2 = 0; 
+
+  if (t_now1 - t_last2 >= 500) {
     Serial.print("Left: ");
     Serial.print(omega_L);
     Serial.print(" rad/s | Right: ");
     Serial.print(omega_R);
     Serial.println(" rad/s");
-    delay(500);
+    
+    t_last2 = t_now1; // Now this will successfully save the time for the next call
+  }
 }

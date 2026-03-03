@@ -42,22 +42,20 @@ void setup() {
   //wifi.startup();
   move.startup();
   enc.startup();
-  move.calibrateFeedforward();
+  //move.calibrateFeedforward();
 }
-void loop() {
-  enc.run(); 
-  
+void loop() {  
   double currentTime = millis();
   double dt = (currentTime - prevTime) / 1000.0; 
   
   if (dt >= 0.05) { 
     prevTime = currentTime;
-    
     imuData = imu.read();
+    enc.run(); 
     
-    move.move(0, 9.0, dt, enc.omega_L, enc.omega_R, imuData.gyroZ);
-    
-    enc.print(); // Optional: Keep this inside the timed loop so it doesn't flood the Serial monitor
+    move.move(0, 6, dt, enc.omega_L, enc.omega_R, imuData.gyroZ);
+
+    //enc.print(); 
 
   }
 }

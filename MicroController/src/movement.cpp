@@ -13,13 +13,13 @@ double movement::AngularPID(double setpoint, double current, double dt) {
 
   double error = setpoint - current;
   integral_angular += error * dt; 
-  if (integral_angular > ANG_MAX_INTEGRAL) integral_angular = ANG_MAX_INTEGRAL;
-  if (integral_angular < -ANG_MAX_INTEGRAL) integral_angular = -ANG_MAX_INTEGRAL;
+  if (integral_angular > ANGULAR_MAX_INTEGRAL) integral_angular = ANGULAR_MAX_INTEGRAL;
+  if (integral_angular < -ANGULAR_MAX_INTEGRAL) integral_angular = -ANGULAR_MAX_INTEGRAL;
   
   double derivative = (error - prev_err_angular) / dt;
   prev_err_angular = error;
   
-  double correction = (ANG_KP * error) + (ANG_KI * integral_angular) + (ANG_KD * derivative);
+  double correction = (ANGULAR_KP * error) + (ANGULAR_KI * integral_angular) + (ANGULAR_KD * derivative);
   
   return correction;
 }
@@ -41,14 +41,16 @@ double movement::LeftPID(double setpoint, double current, double dt) {
 }
 
 double movement::RightPID(double setpoint, double current, double dt) {
-    double error = setpoint - current;
+  
+  double error = setpoint - current;
         
-    integral_right += error * dt;
+  integral_right += error * dt;
     if (integral_right > RIGHT_MAX_INTEGRAL) integral_right = RIGHT_MAX_INTEGRAL; 
     if (integral_right < -RIGHT_MAX_INTEGRAL) integral_right = -RIGHT_MAX_INTEGRAL;
   
-    double derivative = (error - prev_err_right) / dt;
-    prev_err_right = error;
+  double derivative = (error - prev_err_right) / dt;
+  
+  prev_err_right = error;
     
   double pid_output = (RIGHT_KP * error) + (RIGHT_KI * integral_right) + (RIGHT_KD * derivative);
   
@@ -89,15 +91,15 @@ void movement::move(double targetW, double targetV, double dt, double Lencoder, 
   unsigned long current_time = millis();
   
   if (abs(left) > 0 && abs(left)<MIN_PWM){
-    double duty_cycle = abs(left) / MIN_PWM;
+    double duty_cycle = abs(left) / MACRO_PWM;
     double on_time = duty_cycle * MACRO_WINDOW_MS;
     
     if (current_time - macro_timer_L >= MACRO_WINDOW_MS) {
       macro_timer_L = current_time; 
     }
 
-    if (current_time - macro_timer_L < on_time) {
-      int active_pwm = (left > 0) ? MIN_PWM : -MIN_PWM;   //forward or backward
+    if (current_time - macro_timer_L <= on_time) {
+      int active_pwm = (left > 0) ? MACRO_PWM : -MACRO_PWM;
       run(active_pwm, 0); 
     } else {
       run(0, 0);
@@ -110,7 +112,7 @@ void movement::move(double targetW, double targetV, double dt, double Lencoder, 
   }
   
   if (abs(right) > 0 && abs(right)<MIN_PWM){
-    double duty_cycle = abs(right) / MIN_PWM;
+    double duty_cycle = abs(right) / MACRO_PWM;
     double on_time = duty_cycle * MACRO_WINDOW_MS;
     
     if (current_time - macro_timer_R >= MACRO_WINDOW_MS) {
@@ -118,7 +120,7 @@ void movement::move(double targetW, double targetV, double dt, double Lencoder, 
     }
 
     if (current_time - macro_timer_R < on_time) {
-      int active_pwm = (right > 0) ? MIN_PWM : -MIN_PWM;   //forward or backward
+      int active_pwm = (right > 0) ? MACRO_PWM : -MACRO_PWM;   //forward or backward
       run(active_pwm, 1); 
     } else {
       run(0, 1);
@@ -168,6 +170,10 @@ void movement::calibrateFeedforward() {
   double movingAVG_ARRAY_R[10] = {0};
   double movingAVG_L = 0;
   double movingAVG_R = 0;
+
+  calibrateFeedforward_L.clear();
+  calibrateFeedforward_R.clear();
+
   for (int speed = MIN_PWM; speed <= 255; speed += 5){
     Serial.print("Calibrating at speed: ");
     Serial.println(speed);
@@ -211,8 +217,8 @@ void movement::calibrateFeedforward() {
     calibrateFeedforward_R.insert({movingAVG_R, speed});
   }
 
-  run(0, 0); // Left motor forward
-  run(0, 1); // Right motor forward
+  run(0, 0); 
+  run(0, 1);
 
   Serial.println("\n// ==========================================");
   Serial.println("// COPY AND PASTE CALIBRATION MAPS BELOW");
@@ -224,7 +230,7 @@ void movement::calibrateFeedforward() {
     Serial.print("  {");
     Serial.print(pair.first);
     Serial.print(", ");
-    Serial.print(pair.second, 4);
+    Serial.print(pair.second);
     Serial.println("},");
   }
   Serial.println("};\n");
@@ -235,7 +241,7 @@ void movement::calibrateFeedforward() {
     Serial.print("  {");
     Serial.print(pair.first);
     Serial.print(", ");
-    Serial.print(pair.second, 4); 
+    Serial.print(pair.second); 
     Serial.println("},");
   }
   Serial.println("};\n");
