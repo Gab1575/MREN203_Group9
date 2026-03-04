@@ -25,38 +25,38 @@ double movement::AngularPID(double setpoint, double current, double dt) {
 }
 
 double movement::LeftPID(double setpoint, double current, double dt) {
-  double error = setpoint - current;
-    integral_left += error * dt;
+  double errorL = setpoint - current;
+    integral_left += errorL * dt;
   if (integral_left > LEFT_MAX_INTEGRAL) integral_left = LEFT_MAX_INTEGRAL; 
   if (integral_left < -LEFT_MAX_INTEGRAL) integral_left = -LEFT_MAX_INTEGRAL;
   
-  double derivative = (error - prev_err_left) / dt;
-  prev_err_left = error;
+  double derivativeL = (errorL - prev_err_left) / dt;
+  prev_err_left = errorL;
 
-  double pid_output = (LEFT_KP * error) + (LEFT_KI * integral_left) + (LEFT_KD * derivative);
+  double pid_outputL = (LEFT_KP * errorL) + (LEFT_KI * integral_left) + (LEFT_KD * derivativeL);
   
-  double ff_output = calculateFeedforward(setpoint, calibrateFeedforward_L);
+  double ff_outputL = calculateFeedforward(setpoint, calibrateFeedforward_L);
   
-  return ff_output + pid_output;
+  return ff_outputL + pid_outputL;
 }
 
 double movement::RightPID(double setpoint, double current, double dt) {
   
-  double error = setpoint - current;
+  double errorR = setpoint - current;
         
-  integral_right += error * dt;
+  integral_right += errorR * dt;
     if (integral_right > RIGHT_MAX_INTEGRAL) integral_right = RIGHT_MAX_INTEGRAL; 
     if (integral_right < -RIGHT_MAX_INTEGRAL) integral_right = -RIGHT_MAX_INTEGRAL;
   
-  double derivative = (error - prev_err_right) / dt;
+  double derivativeR = (errorR - prev_err_right) / dt;
   
-  prev_err_right = error;
+  prev_err_right = errorR;
     
-  double pid_output = (RIGHT_KP * error) + (RIGHT_KI * integral_right) + (RIGHT_KD * derivative);
+  double pid_outputR = (RIGHT_KP * errorR) + (RIGHT_KI * integral_right) + (RIGHT_KD * derivativeR);
   
-  double ff_output = calculateFeedforward(setpoint, calibrateFeedforward_R);
+  double ff_outputR = calculateFeedforward(setpoint, calibrateFeedforward_R);
   
-  return ff_output + pid_output;
+  return ff_outputR + pid_outputR;
 }
 
 void movement::move(double targetW, double targetV, double dt, double Lencoder, double Rencoder, double actual_W) {
@@ -82,6 +82,10 @@ void movement::move(double targetW, double targetV, double dt, double Lencoder, 
   double left = LeftPID(target_vel_L, Lencoder, dt);
   double right = RightPID(target_vel_R, -Rencoder, dt);
 
+  // Serial.print(left);
+  // Serial.print(", ");
+  // Serial.println(right);
+
   if (left > 255) left = 255;
   else if (left < -255) left = -255;
 
@@ -91,15 +95,17 @@ void movement::move(double targetW, double targetV, double dt, double Lencoder, 
   unsigned long current_time = millis();
   
   if (abs(left) > 0 && abs(left)<MIN_PWM){
-    double duty_cycle = abs(left) / MACRO_PWM;
-    double on_time = duty_cycle * MACRO_WINDOW_MS;
+    double duty_cycleL = fabs(left) / (double)MACRO_PWM; 
+    double on_timeL = duty_cycleL * MACRO_WINDOW_MS;
     
     if (current_time - macro_timer_L >= MACRO_WINDOW_MS) {
       macro_timer_L = current_time; 
     }
 
-    if (current_time - macro_timer_L <= on_time) {
+    if (current_time - macro_timer_L <= on_timeL) {
       int active_pwm = (left > 0) ? MACRO_PWM : -MACRO_PWM;
+      //Serial.print("MACRO-PULSING LEFT: ");
+      //Serial.println(active_pwm);
       run(active_pwm, 0); 
     } else {
       run(0, 0);
@@ -112,14 +118,14 @@ void movement::move(double targetW, double targetV, double dt, double Lencoder, 
   }
   
   if (abs(right) > 0 && abs(right)<MIN_PWM){
-    double duty_cycle = abs(right) / MACRO_PWM;
-    double on_time = duty_cycle * MACRO_WINDOW_MS;
+    double duty_cycleR = fabs(right) / (double)MACRO_PWM; 
+    double on_timeR = duty_cycleR * MACRO_WINDOW_MS;
     
     if (current_time - macro_timer_R >= MACRO_WINDOW_MS) {
       macro_timer_R = current_time; 
     }
 
-    if (current_time - macro_timer_R < on_time) {
+    if (current_time - macro_timer_R <= on_timeR) {
       int active_pwm = (right > 0) ? MACRO_PWM : -MACRO_PWM;   //forward or backward
       run(active_pwm, 1); 
     } else {
@@ -164,59 +170,80 @@ void movement::run(int PWM, bool side) {
 }
 
 void movement::calibrateFeedforward() {
-  Serial.print("Calibrating Feedforward");
+  Serial.print("Calibrating Feedforward\n");
   encoders encCalibrate;
-  double movingAVG_ARRAY_L[10] = {0};
-  double movingAVG_ARRAY_R[10] = {0};
-  double movingAVG_L = 0;
-  double movingAVG_R = 0;
-
+  
   calibrateFeedforward_L.clear();
   calibrateFeedforward_R.clear();
 
-  for (int speed = MIN_PWM; speed <= 255; speed += 5){
-    Serial.print("Calibrating at speed: ");
+  // Start all the way from 5, going up to 255
+  for (int speed = 5; speed <= 255; speed += 5){
+    Serial.print("Calibrating at target power: ");
     Serial.println(speed);
-    run(speed, 0); // Left motor forward
-    run(speed, 1); // Right motor forward
-    delay(500); // Allow time for the motors to reach the target speed
-    
-    for (int i = 0; i < 10; i++) {
-      encCalibrate.run(); // Update encoder readings
-      movingAVG_ARRAY_L[i] = encCalibrate.omega_L;
-      movingAVG_ARRAY_R[i] = -encCalibrate.omega_R;
-      delay(50); // Sample every 10ms within the macro window
-    }
 
-    // Calculate moving average for left and right encoders
-    movingAVG_L = movingAVG_ARRAY_L[0]+
-                  movingAVG_ARRAY_L[1]+
-                  movingAVG_ARRAY_L[2]+
-                  movingAVG_ARRAY_L[3]+
-                  movingAVG_ARRAY_L[4]+
-                  movingAVG_ARRAY_L[5]+
-                  movingAVG_ARRAY_L[6]+
-                  movingAVG_ARRAY_L[7]+
-                  movingAVG_ARRAY_L[8]+
-                  movingAVG_ARRAY_L[9];
-    movingAVG_L /= 10;
+    double encoderSum_L = 0;
+    double encoderSum_R = 0;
+    int sampleCount = 0;
 
-    movingAVG_R = movingAVG_ARRAY_R[0]+
-                  movingAVG_ARRAY_R[1]+
-                  movingAVG_ARRAY_R[2]+
-                  movingAVG_ARRAY_R[3]+
-                  movingAVG_ARRAY_R[4]+
-                  movingAVG_ARRAY_R[5]+
-                  movingAVG_ARRAY_R[6]+
-                  movingAVG_ARRAY_R[7]+
-                  movingAVG_ARRAY_R[8]+
-                  movingAVG_ARRAY_R[9];
-    movingAVG_R /= 10;
+    unsigned long startTime = millis();
+    unsigned long lastSampleTime = millis();
+
+    // Run this specific speed test for 1.5 seconds
+    while (millis() - startTime < 1500) {
+      unsigned long current_time = millis();
+
+      // ==========================================
+      // 1. DRIVE THE MOTORS (Non-blocking)
+      // ==========================================
+      if (speed < MIN_PWM) {
+        // Macro-Pulsing Mode for low speeds
+        double duty_cycle = (double)speed / MACRO_PWM; 
+        double on_time = duty_cycle * MACRO_WINDOW_MS;
+        
+        // Left
+        if (current_time - macro_timer_L >= MACRO_WINDOW_MS) macro_timer_L = current_time; 
+        if (current_time - macro_timer_L <= on_time) run(MACRO_PWM, 0); 
+        else run(0, 0);
+        
+        // Right
+        if (current_time - macro_timer_R >= MACRO_WINDOW_MS) macro_timer_R = current_time; 
+        if (current_time - macro_timer_R <= on_time) run(MACRO_PWM, 1); 
+        else run(0, 1);
+      } 
+      else {
+        // Continuous power for normal speeds
+        run(speed, 0);
+        run(speed, 1);
+      }
+
+      // ==========================================
+      // 2. READ THE ENCODERS
+      // ==========================================
+      encCalibrate.run(); // Keep updating encoder ticks constantly
+
+      // Only start recording averages AFTER the first 500ms to let motors get to speed
+      if (current_time - startTime > 500) {
+        
+        // Take a snapshot every 50ms
+        if (current_time - lastSampleTime >= 50) {
+          encoderSum_L += encCalibrate.omega_L;
+          encoderSum_R += -encCalibrate.omega_R;
+          sampleCount++;
+          lastSampleTime = current_time;
+        }
+      }
+      
+    } // End of 1.5 second test loop
+
+    // Calculate the true physical average for this speed
+    double movingAVG_L = (sampleCount > 0) ? (encoderSum_L / sampleCount) : 0.0;
+    double movingAVG_R = (sampleCount > 0) ? (encoderSum_R / sampleCount) : 0.0;
 
     calibrateFeedforward_L.insert({movingAVG_L, speed});
     calibrateFeedforward_R.insert({movingAVG_R, speed});
   }
 
+  // Turn motors off when completely done
   run(0, 0); 
   run(0, 1);
 
@@ -252,7 +279,7 @@ void movement::calibrateFeedforward() {
   Serial.println("// ==========================================");
 
   while(true){
-    // Infinite loop to prevent the robot from doing anything else after calibration
+    
   };
 }
 

@@ -1,26 +1,8 @@
-//main.cpp
 #include <Arduino.h>
 #include "encoders.h"
 #include "movement.h"
 #include "IMU.h"
 #include "wifiCom.h"
-
-//ENCODERS
-// SIGNAL_A 2
-// SIGNAL_B 3
-// SIGNAL_C 4
-// SIGNAL_D 5
-
-//MOTOR PINS
-// EA 6  
-// EB 11 
-
-// I1 8 
-// I2 7 
-// I4 9 
-// I3 12 
-
-
 
 double Lspeed;
 double Rspeed; 
@@ -31,7 +13,9 @@ movement move;
 encoders enc;
 wifiCom wifi;
 
-double prevTime = 0;
+// TWO separate timers
+unsigned long prevFastTime = 0;
+unsigned long prevSensorTime = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -39,23 +23,25 @@ void setup() {
     while (1); // Wait for Serial to be ready
   }
   imu.startup();
-  //wifi.startup();
   move.startup();
   enc.startup();
   //move.calibrateFeedforward();
 }
+
 void loop() {  
-  double currentTime = millis();
-  double dt = (currentTime - prevTime) / 1000.0; 
+  unsigned long currentMillis = millis();
   
-  if (dt >= 0.05) { 
-    prevTime = currentTime;
+  double dt = (currentMillis - prevFastTime) / 1000.0; 
+  
+  if (dt > 0) {
+    move.move(0, 10, dt, enc.omega_L, enc.omega_R, imuData.gyroZ);
+    prevFastTime = currentMillis; 
+  }
+
+  if (currentMillis - prevSensorTime >= 50) { 
+    prevSensorTime = currentMillis;
     imuData = imu.read();
     enc.run(); 
-    
-    move.move(0, 6, dt, enc.omega_L, enc.omega_R, imuData.gyroZ);
-
-    //enc.print(); 
-
+    enc.print();
   }
 }
