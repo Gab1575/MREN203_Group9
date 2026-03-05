@@ -25,4 +25,17 @@ void loop() {
   imuData = imu.read();
   move.move(0,200, 0.1); // Move forward at 200 mm/s
   enc.run();
+  sendDataToPi(); //calls function below, might need delay afterwards
+}
+
+//Publish data from the serial monitor for the pi to read
+//Data includes IMU gyro and accel, and encoder angular velocity
+void sendDataToPi() {
+  //order of data: gyroX, gyroY, gyroZ, accelX, accelY, accelZ, omega_L, omega_R
+  Serial.print(imuData.gyroZ); Serial.print(","); // Assuming gyroZ is the yaw rate
+  Serial.print(imuData.accelX); Serial.print(",");
+  Serial.print(imuData.accelY); Serial.print(",");
+  Serial.print(imuData.accelZ); Serial.print(",");
+  Serial.print(enc.omega_L); Serial.print(",");
+  Serial.println(enc.omega_R); //newline char here to signify end of data packet
 }
