@@ -7,10 +7,14 @@
 
 class DataParser {
 public:
-float gyroZ = 0.0; accelX = 0.0; accelY = 0.0; accelZ = 0.0; 
-float omega_L = 0.0; omega_R = 0.0;
+float gyroZ = 0.0; 
+float accelX = 0.0; 
+float accelY = 0.0; 
+float accelZ = 0.0; 
+float omega_L = 0.0; 
+float omega_R = 0.0;
 
-void parse(Const std::string& line) {
+void parse(const std::string& line) {
     //create a stream from the serial string
     std::stringstream ss(line);
     std::string chunk;

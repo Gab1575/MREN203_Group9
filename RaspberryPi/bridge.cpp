@@ -18,18 +18,18 @@
 using namespace std::chrono_literals;
 
 //write the ros node here that publishes the data handled from the arduino 
-class Bridge {
+class Bridge : public rclcpp::Node {
 public: 
-    Bridge() : Node("bridge_node") {
+    rclcpp::Node("bridge_node") {
         // Initialize ROS publishers
         //Creating topics for IMU, and left/right encoder data
         imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("imu_data", 10);
-        left_encoder_pub_ = this->create_publisher<sensor_msgs::msg::String>("left_encoder_data", 10);
-        right_encoder_pub_ = this->create_publisher<sensor_msgs::msg::String>("right_encoder_data", 10);
+        left_encoder_pub_ = this->create_publisher<std_msgs::msg::String>("left_encoder_data", 10);
+        right_encoder_pub_ = this->create_publisher<std_msgs::msg::String>("right_encoder_data", 10);
 
         //setup the serial connection to the arduino, will print if error
         try{
-            ser.setPort("/dev/ttyACM0"); //try this usb port, may be different. 
+            ser_.setPort("/dev/ttyACM0"); //try this usb port, may be different. 
             //can check in pi terminal for correct one
             ser_.setBaudrate(115200);
             auto timeout = serial::Timeout::simpleTimeout(1000);
@@ -83,7 +83,7 @@ private:
 
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr left_encoder_pub_;
-    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr right_encoder_pub
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr right_encoder_pub;
     rclcpp::TimerBase::SharedPtr timer_;
 };
 
