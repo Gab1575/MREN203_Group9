@@ -1,0 +1,23 @@
+Place this pi_arduino_bridge package onto the pi in the ros2_ws/src workspace 
+To run, paste these commands step by step into the terminal: 
+cd rps2_ws
+source install/setup.bash
+ros2 run pi_arduino_bridge bridge
+
+Enter a new terminal
+#to see list of active topics 
+ros2 topic list
+#to see live IMU data
+ros2 topic echo /imu_data
+#to see wheel speeds
+ros2 topic echo /left_encoder_data
+ros2 topic echo /right_encoder_data
+
+Diagnostic Commands. If you don't see data appearing, use these commands to troubleshoot:
+
+#Check Frequency: See if the data is actually coming in at the 50Hz (20ms) rate you set in your timer.
+ros2 topic hz /imu_data
+#Check Topic Info: See which nodes are publishing and which are subscribing.
+ros2 topic info /imu_data --verbose
+#Check Active Nodes: Confirm your node name appears on the graph.
+ros2 node list
