@@ -20,12 +20,12 @@ using namespace std::chrono_literals;
 //write the ros node here that publishes the data handled from the arduino 
 class Bridge : public rclcpp::Node {
 public: 
-    rclcpp::Node("bridge_node") {
+    Bridge() : Node("bridge_node") {
         // Initialize ROS publishers
         //Creating topics for IMU, and left/right encoder data
         imu_pub_ = this->create_publisher<sensor_msgs::msg::Imu>("imu_data", 10);
-        left_encoder_pub_ = this->create_publisher<std_msgs::msg::String>("left_encoder_data", 10);
-        right_encoder_pub_ = this->create_publisher<std_msgs::msg::String>("right_encoder_data", 10);
+        left_encoder_pub_ = this->create_publisher<std_msgs::msg::Float64>("left_encoder_data", 10);
+        right_encoder_pub_ = this->create_publisher<std_msgs::msg::Float64>("right_encoder_data", 10);
 
         //setup the serial connection to the arduino, will print if error
         try{
@@ -43,6 +43,7 @@ public:
 
         RCLCPP_INFO(this->get_logger(), "Bridge node has been started.");
     }
+
 
 private: 
     void processSerial() {
@@ -83,7 +84,7 @@ private:
 
     rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imu_pub_;
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr left_encoder_pub_;
-    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr right_encoder_pub;
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr right_encoder_pub_;
     rclcpp::TimerBase::SharedPtr timer_;
 };
 
