@@ -19,9 +19,6 @@ unsigned long prevSensorTime = 0;
 
 void setup() {
   Serial.begin(115200);
-  if(!Serial) {
-    while (1); // Wait for Serial to be ready
-  }
   imu.startup();
   move.startup();
   enc.startup();
@@ -34,7 +31,7 @@ void loop() {
   double dt = (currentMillis - prevFastTime) / 1000.0; 
   
   if (dt > 0) {
-    move.move(0, 10, dt, enc.omega_L, enc.omega_R, imuData.gyroZ);
+    move.move(3, 0, dt, enc.omega_L, enc.omega_R, imuData.gyroZ);
     prevFastTime = currentMillis; 
   }
 

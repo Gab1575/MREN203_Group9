@@ -79,8 +79,28 @@ void movement::move(double targetW, double targetV, double dt, double Lencoder, 
   double target_vel_L = current_target_v - ((corrected_W * TRACK_WIDTH) / 2.0);
   double target_vel_R = current_target_v + ((corrected_W * TRACK_WIDTH) / 2.0);
 
+  if (target_vel_L > 255) {
+    double offset = target_vel_L - 255;
+    target_vel_R -= offset;
+    target_vel_L = 255;
+  } else if (target_vel_L < -255) {
+    double offset = target_vel_L + 255;
+    target_vel_R += offset;
+    target_vel_L = -255;
+  }
+
+  if (target_vel_R > 255) {
+    double offset = target_vel_R - 255;
+    target_vel_L -= offset;
+    target_vel_R = 255;
+  } else if (target_vel_R < -255) {
+    double offset = target_vel_R + 255;
+    target_vel_L += offset;
+    target_vel_R = -255;
+  }
+
   double left = LeftPID(target_vel_L, Lencoder, dt);
-  double right = RightPID(target_vel_R, -Rencoder, dt);
+  double right = RightPID(target_vel_R, Rencoder, dt);
 
   // Serial.print(left);
   // Serial.print(", ");

@@ -24,12 +24,12 @@
 #define RIGHT_KI 5
 #define RIGHT_MAX_INTEGRAL 75
 
-#define ANGULAR_KP 0
-#define ANGULAR_KD 0
-#define ANGULAR_KI 0
+#define ANGULAR_KP 5
+#define ANGULAR_KD 1
+#define ANGULAR_KI 5
 #define ANGULAR_MAX_INTEGRAL 100.0
 
-#define MAX_ACCELERATION 10.0 // Max change in velocity per second
+#define MAX_ACCELERATION 20.0 // Max change in velocity per second
 
 #define TRACK_WIDTH 0.28
 

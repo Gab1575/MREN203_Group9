@@ -57,7 +57,7 @@ void encoders::run(){
     t_last = t_now;
 
     omega_L = 2.0 * PI * ((double)currentTicksL / (double)TPR) * 1000.0 / (double)dt;
-    omega_R = 2.0 * PI * ((double)currentTicksR / (double)TPR) * 1000.0 / (double)dt;
+    omega_R = -(2.0 * PI * ((double)currentTicksR / (double)TPR) * 1000.0 / (double)dt);
   }
 }
 
