@@ -12,6 +12,8 @@ InternalIMU imu;
 movement move;
 encoders enc;
 
+void sendDataToPi();
+
 void setup() {
   Serial.begin(115200);
   if(!Serial) {
@@ -23,7 +25,7 @@ void setup() {
 }
 void loop() {
   imuData = imu.read();
-  move.move(0,200, 0.1); // Move forward at 200 mm/s
+  //move.move(0,200, 0.1); // Move forward at 200 mm/s
   enc.run();
   sendDataToPi(); //calls function below, might need delay afterwards
 }
