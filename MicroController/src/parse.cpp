@@ -1,0 +1,59 @@
+#include "parse.h"
+
+parse::parse() {
+    index = 0; // Initialize here in the constructor instead
+    receivedChars[0] = '\0';
+}
+
+bool parse::run(double& linear_v, double& angular_v) {
+    bool successfulParse = false; // Track if we got valid data this cycle
+    
+    receiveData();
+    
+    if (newData == true) {
+        char* token = strtok(receivedChars, ",");
+        
+        // Validate header
+        if (token != NULL && token[0] == 'V') {
+            
+            // Grab linear velocity
+            token = strtok(NULL, ",");
+            if (token != NULL) {
+                linear_v = atof(token); 
+                
+                // Grab angular velocity
+                token = strtok(NULL, ",");
+                if (token != NULL) {
+                    angular_v = atof(token);
+                    successfulParse = true; // Success! We got both values.
+                }
+            }
+        }
+        newData = false; // Always reset flag after reading a packet, success or fail
+    }
+    
+    return successfulParse;
+}
+
+void parse::receiveData() {
+    // Removed index = 0; from here so the state machine persists
+    char endMarker = '\n';
+    char rc;
+
+    while(Serial.available() > 0 && newData == false) {
+        rc = Serial.read();
+
+        if (rc != endMarker) {
+            receivedChars[index] = rc;
+            index++;
+            if (index >= numChars) {
+                index = numChars - 1; // Prevent overflow
+            }
+        }
+        else {
+            receivedChars[index] = '\0'; // Terminate the string
+            index = 0;                   // Reset index ONLY when the packet is complete
+            newData = true;
+        }
+    }
+}
