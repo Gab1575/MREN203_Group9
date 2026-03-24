@@ -5,6 +5,10 @@ parse::parse() {
     receivedChars[0] = '\0';
 }
 
+void parse::startup(){
+    clearBuffer();
+}
+
 bool parse::run(double& linear_v, double& angular_v) {
     bool successfulParse = false; // Track if we got valid data this cycle
     
@@ -33,6 +37,19 @@ bool parse::run(double& linear_v, double& angular_v) {
     }
     
     return successfulParse;
+}
+
+void parse::clearBuffer(){
+    // 1. Empty the Arduino's hardware RX buffer
+    // We read and discard bytes until there are none left.
+    while (Serial.available() > 0) {
+        Serial.read();
+    }
+
+    // 2. Reset our software state machine
+    index = 0;
+    newData = false;
+    receivedChars[0] = '\0'; // Clears the string array by throwing a null terminator at the start
 }
 
 void parse::receiveData() {

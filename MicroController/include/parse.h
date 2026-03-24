@@ -7,7 +7,7 @@ class parse {
 public:
     parse();
     bool run(double& linear_v, double& angular_v); 
-
+    void startup();
 private:
     static const byte numChars = 32;
     char receivedChars[numChars];    
@@ -15,6 +15,7 @@ private:
     byte index;                    
 
     void receiveData();
+    void clearBuffer();
 };
 
 #endif // PARSE_H

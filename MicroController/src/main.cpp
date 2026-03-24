@@ -27,6 +27,7 @@ void setup() {
   imu.startup();
   move.startup();
   enc.startup();
+  parser.startup();
 }
 
 void loop() {
