@@ -1,9 +1,20 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
 def generate_launch_description():
+    # setup paths to the Nav2 bringup 
+    pkg_description = get_package_share_directory('description')
+    pkg_nav2_bringup = get_package_share_directory('nav2_bringup')
+    pkg_startup = get_package_share_directory('startup')
+    
+    local_nav2_params_path = os.path.join(pkg_startup, 'launch', 'navigation_launch.py')
+    
+    nav2_params_path = os.path.join(pkg_description, 'src', 'startup', 'config', 'nav2_params.yaml')
+    
     # 1. Locate and read the URDF file from the description package
     urdf_file_name = 'hershey.urdf'
     urdf_file_path = os.path.join(
@@ -81,5 +92,16 @@ def generate_launch_description():
                 'map_update_interval': 2.0,
                 'resolution': 0.05
             }]
+        )
+
+        # 8. Nav2
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(pkg_startup, 'launch', 'navigation_launch.py')),
+            launch_arguments={
+                'params_file': nav2_params_path,
+                'use_sim_time': 'False',
+                'autostart': 'True'
+            }.items()
         )
     ])
