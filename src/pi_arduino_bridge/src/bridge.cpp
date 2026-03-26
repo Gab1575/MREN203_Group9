@@ -38,6 +38,11 @@ public:
         odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
         tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
+                //NEW: subscriber for Nav2 -> Pi -> Arduino 
+        //This listens for velocity commands and calls 'cmdVelCallback' to send them to the arduino serial monitor
+        cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
+            "cmd_vel", 10, std::bind(&Bridge::cmdVelCallback, this, std::placeholders::_1));
+        
         //setup the serial connection to the arduino, will print if error
         try{
             ser_.setPort("/dev/arduino"); //try this usb port, may be different. 
@@ -74,6 +79,29 @@ private:
         return old_angle + omega_z * dt;
     }
 
+        void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg) {
+        // Extract linear and angular velocities from the message
+        // linear.x and angular.z are the only relevant fields for our purposes
+        double linear_x = msg->linear.x;
+        double angular_z = msg->angular.z;
+
+        // Convert to wheel speeds (assuming a differential drive robot). 
+        //CHECK IF THIS IS THE CORRECT MATH, we might not need it if the PID control only wants linear and angular velocity commands 
+        //double wheel_base = 0.2223; // distance between wheels in meters, may need to change?
+        //double left_wheel_speed = linear_x - (angular_z * wheel_base / 2.0);
+        //double right_wheel_speed = linear_x + (angular_z * wheel_base / 2.0);
+
+        // Send the wheel speeds to the Arduino via serial
+        if (ser_.isOpen()) {
+            // Format string sent to arduino as starting with "V" so we know to correctly parse for this in PID control code
+            std::string command = "V," + std::to_string(linear_x) + "," + std::to_string(angular_z) + "\n";
+            ser_.write(command);
+            //log this so we make sure Nav2 is actually logging this to the bridge
+            RCLCPP_INFO(this->get_logger(), "Sent cmd_vel to Arduino: %s", command.c_str());
+        } else {
+            RCLCPP_ERROR(this->get_logger(), "Serial port not open. Cannot send cmd_vel data.");
+        }
+    }
 
 void processSerial() {
         if (ser_.isOpen() && ser_.available()) {
@@ -217,6 +245,7 @@ void processSerial() {
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr left_encoder_pub_;
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr right_encoder_pub_;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
+    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
     rclcpp::TimerBase::SharedPtr timer_;
 };
