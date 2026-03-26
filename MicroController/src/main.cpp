@@ -40,7 +40,7 @@ void loop() {
     enc.run();
     sendDataToPi(); 
     if (parser.run(currentLinVel, currentAngVel)) {
-      move.move(currentAngVel, currentLinVel, 0.1);
+      move.move(currentAngVel, currentLinVel, 0.01, enc.omega_L, enc.omega_R, imuData.gyroZ);
     }
   }
 } 
