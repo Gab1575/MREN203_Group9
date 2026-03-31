@@ -37,8 +37,8 @@ public:
         joint_state_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
         odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
         tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
-
-                //NEW: subscriber for Nav2 -> Pi -> Arduino 
+        
+        //NEW: subscriber for Nav2 -> Pi -> Arduino 
         //This listens for velocity commands and calls 'cmdVelCallback' to send them to the arduino serial monitor
         cmd_vel_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
             "cmd_vel", 10, std::bind(&Bridge::cmdVelCallback, this, std::placeholders::_1));
@@ -67,29 +67,32 @@ private:
     return (omega_L + omega_R) * wheel_radius / 2.0;
     }
 
-    double x_pos_integration(double velocity, double x_old, double angle, double dt) {
-        return x_old + velocity * cos(angle) * dt;
+    double x_pos_integration(double velocity, double x_old, double old_angle, double omega_z, double dt) {
+        // Find the angle halfway through the movement (Midpoint Method)
+        double midpoint_angle = old_angle + (omega_z * dt / 2.0);
+        return x_old + velocity * cos(midpoint_angle) * dt;
     }
 
-    double y_pos_integration(double velocity, double y_old, double angle, double dt) {
-        return y_old + velocity * sin(angle) * dt;
+    double y_pos_integration(double velocity, double y_old, double old_angle, double omega_z, double dt) {
+        double midpoint_angle = old_angle + (omega_z * dt / 2.0);
+        return y_old + velocity * sin(midpoint_angle) * dt;
     }
 
     double angle_integration(double old_angle, double dt, double omega_z) {
-        return old_angle + omega_z * dt;
+        double new_angle = old_angle + omega_z * dt;
+        
+        // Normalize the angle to be strictly between -PI and +PI
+        while (new_angle > M_PI)  new_angle -= 2.0 * M_PI;
+        while (new_angle < -M_PI) new_angle += 2.0 * M_PI;
+        
+        return new_angle;
     }
 
-        void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg) {
+void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg) {
         // Extract linear and angular velocities from the message
         // linear.x and angular.z are the only relevant fields for our purposes
         double linear_x = msg->linear.x;
         double angular_z = msg->angular.z;
-
-        // Convert to wheel speeds (assuming a differential drive robot). 
-        //CHECK IF THIS IS THE CORRECT MATH, we might not need it if the PID control only wants linear and angular velocity commands 
-        //double wheel_base = 0.2223; // distance between wheels in meters, may need to change?
-        //double left_wheel_speed = linear_x - (angular_z * wheel_base / 2.0);
-        //double right_wheel_speed = linear_x + (angular_z * wheel_base / 2.0);
 
         // Send the wheel speeds to the Arduino via serial
         if (ser_.isOpen()) {
@@ -104,15 +107,15 @@ private:
     }
 
 void processSerial() {
-        if (ser_.isOpen() && ser_.available()) {
-            
-            std::string raw_line;
+    // DRAIN the entire buffer so the Arduino never freezes
+    while (ser_.isOpen() && ser_.available()) { 
+        std::string raw_line;
             try {
                 // Read until the newline character, ensuring a complete packet
                 raw_line = ser_.readline(65536, "\n"); 
             } catch (const serial::SerialException& e) {
                 RCLCPP_ERROR(this->get_logger(), "Serial read failed: %s", e.what());
-                return;
+                continue;
             }
 
             // Clean up any trailing \r characters
@@ -124,14 +127,20 @@ void processSerial() {
             if (comma_count != 5) {
                 // Log the exact string that failed so you can debug the Arduino output
                 RCLCPP_WARN(this->get_logger(), "Dropped malformed packet: '%s'", raw_line.c_str());
-                return;
+                continue;
             }
 
             // 1. PARSE FIRST
             data_parser_.parse(raw_line);
 
-            auto current_time = rclcpp::Clock(RCL_ROS_TIME).now();            double dt = (current_time - last_time_).seconds();
-            last_time_ = current_time; 
+            auto current_time = rclcpp::Clock(RCL_ROS_TIME).now();           
+            
+            // Hardcode dt to 0.02s (50Hz) because we are draining a backlog. 
+            // If we use the PC clock, dt becomes 0.0 during a rapid buffer drain!
+            double dt = 0.02; 
+
+            // 2. NOW DO THE MATH
+            // ... (keep the rest the same)
 
             // 2. NOW DO THE MATH
             // Integrate velocity to get absolute wheel position
@@ -157,9 +166,13 @@ void processSerial() {
             
             // --- ODOMETRY MATH ---
             linear_velocity = calc_linear_velocity(data_parser_.omega_L, data_parser_.omega_R, wheel_radius);
+            
+            // Calculate X and Y FIRST using the old angle and the Midpoint method
+            double x_pos = x_pos_integration(linear_velocity, x_old, angle_old, data_parser_.gyroZ, dt);
+            double y_pos = y_pos_integration(linear_velocity, y_old, angle_old, data_parser_.gyroZ, dt);
+            
+            // THEN update the angle using the normalized integration
             double angle = angle_integration(angle_old, dt, data_parser_.gyroZ);
-            double x_pos = x_pos_integration(linear_velocity, x_old, angle, dt);
-            double y_pos = y_pos_integration(linear_velocity, y_old, angle, dt);
 
             x_old = x_pos;
             y_old = y_pos;

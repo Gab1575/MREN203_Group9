@@ -6,14 +6,14 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
 def generate_launch_description():
-    # setup paths to the Nav2 bringup 
+     # setup paths to the Nav2 bringup 
     pkg_description = get_package_share_directory('description')
     pkg_nav2_bringup = get_package_share_directory('nav2_bringup')
     pkg_startup = get_package_share_directory('startup')
     
     local_nav2_params_path = os.path.join(pkg_startup, 'launch', 'navigation_launch.py')
     
-    nav2_params_path = os.path.join(pkg_description, 'src', 'startup', 'config', 'nav2_params.yaml')
+    nav2_params_path = os.path.join(pkg_startup, 'config', 'nav2_params.yaml')    
     
     # 1. Locate and read the URDF file from the description package
     urdf_file_name = 'hershey.urdf'
@@ -92,8 +92,8 @@ def generate_launch_description():
                 'map_update_interval': 2.0,
                 'resolution': 0.05
             }]
-        )
-
+        ),
+        
         # 8. Nav2
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
@@ -103,5 +103,37 @@ def generate_launch_description():
                 'use_sim_time': 'False',
                 'autostart': 'True'
             }.items()
+        ),
+
+        # 9. Joystick Hardware Node
+        Node(
+            package='joy',
+            executable='joy_node',
+            name='joy_node',
+            output='screen',
+            parameters=[{
+                'dev': '/dev/input/controller',
+                'deadzone': 0.1,
+                'autorepeat_rate': 20.0,
+            }]
+        ),
+
+        # 10. Joystick Teleop Node (Translates sticks to /cmd_vel)
+        Node(
+            package='teleop_twist_joy',
+            executable='teleop_node',
+            name='teleop_twist_joy_node',
+            output='screen',
+            parameters=[{
+                'require_enable_button': True,      # Use "A" button to enable controller
+                'enable_button': 0,   
+                'axis_linear.x': 1,      # DPAD Up/Down
+                'scale_linear.x': 1.5,   # Max forward speed in m/s (Adjust this!)
+                'axis_angular.yaw': 0,   # DPAD Left/Right
+                'scale_angular.yaw': 3.0 # Max rotation speed in rad/s (Adjust this!)
+            }],
+            remappings=[
+                ('/cmd_vel', '/cmd_vel')
+            ]
         )
     ])

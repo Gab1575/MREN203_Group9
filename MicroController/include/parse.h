@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-class parse {
+class parse{
 public:
     parse();
     bool run(double& linear_v, double& angular_v); 

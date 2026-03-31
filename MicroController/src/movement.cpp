@@ -60,104 +60,96 @@ double movement::RightPID(double setpoint, double current, double dt) {
 }
 
 void movement::move(double targetW, double targetV, double dt, double Lencoder, double Rencoder, double actual_W) {
-  
-  double max_step = MAX_ACCELERATION * dt;
+  // ==========================================
+  // 0. THE HARD STOP
+  // If the joystick is completely released, wipe all PID memory and stop dead.
+  // ==========================================
+  if (targetV == 0.0 && targetW == 0.0) {
+    integral_angular = 0;
+    integral_left = 0;
+    integral_right = 0;
+    current_target_v = 0.0;
+    
+    run(0, 0); // Cut power to Left
+    run(0, 1); // Cut power to Right
+    return;    // Exit the function immediately!
+  }
 
+  // 1. Acceleration Limiter (m/s)
+  double max_step = MAX_ACCELERATION * dt;
   if (targetV > current_target_v + max_step) {
-    current_target_v += max_step; // Accelerate smoothly forward
-  } 
-  else if (targetV < current_target_v - max_step) {
-    current_target_v -= max_step; // Accelerate smoothly backward (or brake)
-  } 
-  else {
+    current_target_v += max_step; 
+  } else if (targetV < current_target_v - max_step) {
+    current_target_v -= max_step; 
+  } else {
     current_target_v = targetV; 
   }
 
+  // 2. Angular PID Correction (rad/s)
   double w_correction = AngularPID(targetW, actual_W, dt);
   double corrected_W = targetW + w_correction;
 
-  double target_vel_L = current_target_v - ((corrected_W * TRACK_WIDTH) / 2.0);
-  double target_vel_R = current_target_v + ((corrected_W * TRACK_WIDTH) / 2.0);
+  // 3. Kinematics: Calculate wheel targets in meters per second (m/s)
+  double target_vel_L_ms = current_target_v + ((corrected_W * TRACK_WIDTH) / 2.0);
+  double target_vel_R_ms = current_target_v - ((corrected_W * TRACK_WIDTH) / 2.0);
 
-  if (target_vel_L > 255) {
-    double offset = target_vel_L - 255;
-    target_vel_R -= offset;
-    target_vel_L = 255;
-  } else if (target_vel_L < -255) {
-    double offset = target_vel_L + 255;
-    target_vel_R += offset;
-    target_vel_L = -255;
+  // 4. Conversion: m/s to rad/s (using 0.0625m wheel radius)
+  double target_vel_L_rad = target_vel_L_ms / 0.0625;
+  double target_vel_R_rad = target_vel_R_ms / 0.0625;
+
+  // 5. PID & Feedforward: Input rad/s, Output PWM
+  double left_pwm = LeftPID(target_vel_L_rad, Lencoder, dt);
+  double right_pwm = RightPID(target_vel_R_rad, Rencoder, dt);
+
+  // 6. Proportional PWM Clamping (Maintains turn radius if max power is exceeded)
+  double abs_L = fabs(left_pwm);
+  double abs_R = fabs(right_pwm);
+  double max_pwm = (abs_L > abs_R) ? abs_L : abs_R; // Find the highest requested power
+  
+  if (max_pwm > 255.0) {
+    double scale = 255.0 / max_pwm; // Calculate the shrink ratio (e.g., 0.85)
+    left_pwm *= scale;              // Shrink both equally to preserve the turn!
+    right_pwm *= scale;
   }
 
-  if (target_vel_R > 255) {
-    double offset = target_vel_R - 255;
-    target_vel_L -= offset;
-    target_vel_R = 255;
-  } else if (target_vel_R < -255) {
-    double offset = target_vel_R + 255;
-    target_vel_L += offset;
-    target_vel_R = -255;
-  }
-
-  double left = LeftPID(target_vel_L, Lencoder, dt);
-  double right = RightPID(target_vel_R, Rencoder, dt);
-
-  // Serial.print(left);
-  // Serial.print(", ");
-  // Serial.println(right);
-
-  if (left > 255) left = 255;
-  else if (left < -255) left = -255;
-
-  if (right > 255) right = 255;
-  else if (right < -255) right = -255;
-
+  // 7. Execution: Macro-Pulsing & Normal Drive
   unsigned long current_time = millis();
   
-  if (abs(left) > 0 && abs(left)<MIN_PWM){
-    double duty_cycleL = fabs(left) / (double)MACRO_PWM; 
+  // LEFT MOTOR
+  if (abs(left_pwm) > 0 && abs(left_pwm) < MIN_PWM) {
+    double duty_cycleL = fabs(left_pwm) / (double)MACRO_PWM; 
     double on_timeL = duty_cycleL * MACRO_WINDOW_MS;
     
-    if (current_time - macro_timer_L >= MACRO_WINDOW_MS) {
-      macro_timer_L = current_time; 
-    }
-
+    if (current_time - macro_timer_L >= MACRO_WINDOW_MS) macro_timer_L = current_time; 
+    
     if (current_time - macro_timer_L <= on_timeL) {
-      int active_pwm = (left > 0) ? MACRO_PWM : -MACRO_PWM;
-      //Serial.print("MACRO-PULSING LEFT: ");
-      //Serial.println(active_pwm);
+      int active_pwm = (left_pwm > 0) ? MACRO_PWM : -MACRO_PWM;
       run(active_pwm, 0); 
     } else {
       run(0, 0);
     }
-    
-  } 
-  else {
+  } else {
     macro_timer_L = current_time; 
-    run(left, 0);
+    run(left_pwm, 0);
   }
   
-  if (abs(right) > 0 && abs(right)<MIN_PWM){
-    double duty_cycleR = fabs(right) / (double)MACRO_PWM; 
+  // RIGHT MOTOR
+  if (abs(right_pwm) > 0 && abs(right_pwm) < MIN_PWM) {
+    double duty_cycleR = fabs(right_pwm) / (double)MACRO_PWM; 
     double on_timeR = duty_cycleR * MACRO_WINDOW_MS;
     
-    if (current_time - macro_timer_R >= MACRO_WINDOW_MS) {
-      macro_timer_R = current_time; 
-    }
-
+    if (current_time - macro_timer_R >= MACRO_WINDOW_MS) macro_timer_R = current_time; 
+    
     if (current_time - macro_timer_R <= on_timeR) {
-      int active_pwm = (right > 0) ? MACRO_PWM : -MACRO_PWM;   //forward or backward
+      int active_pwm = (right_pwm > 0) ? MACRO_PWM : -MACRO_PWM;
       run(active_pwm, 1); 
     } else {
       run(0, 1);
     }
-    
-  } 
-  else {
+  } else {
     macro_timer_R = current_time; 
-    run(right, 1);
+    run(right_pwm, 1);
   }
-  
 }
 
 void movement::run(int PWM, bool side) {

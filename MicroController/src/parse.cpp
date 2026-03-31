@@ -10,7 +10,7 @@ void parse::startup(){
 }
 
 bool parse::run(double& linear_v, double& angular_v) {
-    bool successfulParse = false; // Track if we got valid data this cycle
+    bool successfulParse = false; 
     
     receiveData();
     
@@ -23,13 +23,18 @@ bool parse::run(double& linear_v, double& angular_v) {
             // Grab linear velocity
             token = strtok(NULL, ",");
             if (token != NULL) {
-                linear_v = atof(token); 
+                double temp_linear = atof(token); // Store in a temporary variable
                 
                 // Grab angular velocity
                 token = strtok(NULL, ",");
                 if (token != NULL) {
-                    angular_v = atof(token);
-                    successfulParse = true; // Success! We got both values.
+                    double temp_angular = atof(token); // Store in a temporary variable
+                    
+                    // ATOMIC UPDATE: Only overwrite the actual robot variables 
+                    // if we successfully parsed ALL the data in the packet.
+                    linear_v = temp_linear;
+                    angular_v = temp_angular;
+                    successfulParse = true; 
                 }
             }
         }
